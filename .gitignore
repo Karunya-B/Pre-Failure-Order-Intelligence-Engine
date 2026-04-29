@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Virtual environment
+venv/
+
+# Environment variables 
+.env
+
+# VS Code / IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Database 
+*.db
+*.sqlite3
+
+# Build / dist
+build/
+dist/
+*.egg-info/
+
+# Jupyter 
+.ipynb_checkpoints/
+
+# Coverage / testing
+.coverage
+htmlcov/
+test_gemini.py
+test_gemini_models.py
+documentation/
