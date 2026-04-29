@@ -2,6 +2,8 @@
 
 A FastAPI backend prototype that detects order risk before customers contact support. It returns structured JSON with risk score, confidence, issue type, decision, bilingual messages, alternatives, and explainable risk factors.
 
+The project also includes a minimal plain HTML/CSS/JavaScript frontend served directly by FastAPI.
+
 ## Problem Statement
 
 Customers lose trust when baby and mother essentials are delayed, cancelled, or refunded late. This system predicts order risk early and decides whether to do nothing, monitor, notify, offer an alternative, or escalate before the customer contacts support.
@@ -9,6 +11,8 @@ Customers lose trust when baby and mother essentials are delayed, cancelled, or 
 ## Key Features
 
 - FastAPI `POST /analyze-order` endpoint
+- Minimal frontend served at `/`
+- Swagger API docs at `/docs`
 - Deterministic risk scoring
 - Explainable `risk_factors`
 - Confidence scoring
@@ -71,19 +75,20 @@ Scores are clamped between `0` and `1`. The risk agent also simulates near-term 
 
 `monitor` is internal; no customer message is sent, so `message_en` and `message_ar` are `null`.
 
-## Environment Variables
+## Optional Environment Variables
 
 Create a local `.env` from `.env.example`:
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
-DATABASE_URL=postgresql://user:password@localhost:5432/postgres
+DATABASE_URL=postgresql://user:password@localhost:5432/momzworld
 ```
 
 Both values are optional:
 
-- Missing or invalid `GEMINI_API_KEY` returns deterministic fallback messages.
-- Missing `DATABASE_URL` falls back to the in-memory catalog and default risk signals.
+- Gemini is optional and only used for bilingual message generation.
+- If the Gemini key is missing, invalid, quota-limited, or the model is unavailable, deterministic fallback messages are returned.
+- `DATABASE_URL` is optional; if missing, the system uses the in-memory catalog and default risk signals.
 
 The runtime loads `.env` from the project root. `.env.example` is only a template and is never used for runtime secrets.
 
@@ -96,11 +101,27 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-Open:
+Open frontend:
+
+```text
+http://127.0.0.1:8000/
+```
+
+Open Swagger:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
+
+## Frontend Demo
+
+The frontend is served directly by FastAPI at `/` and calls `/analyze-order` using a relative URL:
+
+```javascript
+fetch("/analyze-order", ...)
+```
+
+That means the same app works locally and after deployment without hardcoded localhost URLs. The UI includes preset orders, a form for all API fields, a clear output summary, risk-factor table, and raw JSON response.
 
 ## Example Request
 
@@ -126,7 +147,7 @@ http://127.0.0.1:8000/docs
   "issue": "cancellation_risk",
   "decision": "notify_and_offer_alternative",
   "message_en": "Your gentle start formula order may be delayed. We can offer Gentle Start Infant Formula 400g as an available alternative.",
-  "message_ar": "قد يتأخر طلب gentle start formula. يمكننا توفير Gentle Start Infant Formula 400g كبديل متاح.",
+  "message_ar": "Arabic bilingual fallback or Gemini-generated message.",
   "alternative_product": "Gentle Start Infant Formula 400g",
   "risk_factors": [
     {"factor": "critical_product", "impact": 0.25},
@@ -152,6 +173,35 @@ python test_api_cases.py
 
 The script sends eight requests to `http://127.0.0.1:8000/analyze-order`, prints each payload and response, compares expected fields, and summarizes pass/fail counts.
 
+## Deployment
+
+For Render/Railway-style deployment:
+
+Build command:
+
+```bash
+pip install -r requirements.txt
+```
+
+Start command:
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port $PORT
+```
+
+Environment variables:
+
+```text
+GEMINI_API_KEY
+DATABASE_URL
+```
+
+The root includes a `Procfile`:
+
+```text
+web: uvicorn main:app --host 0.0.0.0 --port $PORT
+```
+
 ## Known Limitations
 
 - `product_delay_rate` and `customer_risk` currently use rule-based defaults when no database history exists.
@@ -165,6 +215,6 @@ The script sends eight requests to `http://127.0.0.1:8000/analyze-order`, prints
 - Store delivery outcomes and compute `product_delay_rate` dynamically.
 - Compute `customer_risk` from complaints, cancellations, delays, and refunds.
 - Train an ML model using historical outcomes.
-- Add dashboard/frontend for monitoring risk queues.
+- Add richer dashboard views for monitoring risk queues.
 - Add async DB layer, migrations, and Docker.
 - Add scheduled monitoring for `monitor` state orders.

@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pre-Failure Order Intelligence Engine</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --text: #18212f;
+      --muted: #657184;
+      --border: #dbe2ea;
+      --primary: #0f766e;
+      --primary-dark: #115e59;
+      --accent: #2563eb;
+      --danger: #b91c1c;
+      --soft: #eef6f5;
+      --code: #0f172a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 36px 0 48px;
+    }
+
+    header {
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 32px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 10px 28px rgba(24, 33, 47, 0.06);
+      padding: 20px;
+    }
+
+    .card h2 {
+      margin: 0 0 16px;
+      font-size: 18px;
+    }
+
+    .preset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 650;
+      font-size: 14px;
+      min-height: 38px;
+      padding: 0 12px;
+    }
+
+    .preset {
+      color: var(--primary-dark);
+      background: var(--soft);
+      border: 1px solid #b8ddda;
+    }
+
+    .preset:hover {
+      background: #dff0ee;
+    }
+
+    .submit {
+      width: 100%;
+      margin-top: 16px;
+      min-height: 44px;
+      color: #fff;
+      background: var(--primary);
+    }
+
+    .submit:hover {
+      background: var(--primary-dark);
+    }
+
+    .submit:disabled {
+      opacity: 0.65;
+      cursor: wait;
+    }
+
+    form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font: inherit;
+      color: var(--text);
+      background: #fff;
+    }
+
+    input:focus,
+    select:focus {
+      outline: 3px solid rgba(37, 99, 235, 0.16);
+      border-color: var(--accent);
+    }
+
+    .status {
+      min-height: 22px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status.error {
+      color: var(--danger);
+      font-weight: 650;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .metric {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfe;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 18px;
+      overflow-wrap: anywhere;
+    }
+
+    .messages {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .message {
+      border-left: 3px solid var(--primary);
+      background: #f8fbfb;
+      padding: 10px 12px;
+      border-radius: 6px;
+      color: var(--text);
+      min-height: 42px;
+      overflow-wrap: anywhere;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      padding: 9px 8px;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    pre {
+      margin: 0;
+      max-height: 360px;
+      overflow: auto;
+      background: var(--code);
+      color: #e5e7eb;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .empty {
+      color: var(--muted);
+      padding: 20px 0 6px;
+    }
+
+    @media (max-width: 860px) {
+      .layout,
+      .grid,
+      .summary {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <h1>Pre-Failure Order Intelligence Engine</h1>
+      <p class="subtitle">Analyze order risk before customers contact support.</p>
+    </header>
+
+    <section class="layout">
+      <div class="card">
+        <h2>Order Input</h2>
+        <div class="preset-row" id="presets"></div>
+
+        <form id="orderForm">
+          <div class="grid">
+            <label>
+              Order ID
+              <input id="order_id" name="order_id" required />
+            </label>
+            <label>
+              Product Type
+              <select id="product_type" name="product_type"></select>
+            </label>
+          </div>
+
+          <label>
+            Product Name
+            <input id="product_name" name="product_name" required />
+          </label>
+
+          <div class="grid">
+            <label>
+              Days Since Order
+              <input id="days_since_order" name="days_since_order" type="number" step="0.1" min="0" required />
+            </label>
+            <label>
+              Expected Delivery Days
+              <input id="expected_delivery_days" name="expected_delivery_days" type="number" step="0.1" min="0.1" required />
+            </label>
+          </div>
+
+          <div class="grid">
+            <label>
+              Inventory Status
+              <select id="inventory_status" name="inventory_status"></select>
+            </label>
+            <label>
+              Region
+              <select id="region" name="region"></select>
+            </label>
+          </div>
+
+          <label>
+            Customer History
+            <select id="customer_history" name="customer_history"></select>
+          </label>
+
+          <button class="submit" id="analyzeButton" type="submit">Analyze Order</button>
+        </form>
+        <div class="status" id="status"></div>
+      </div>
+
+      <div class="card">
+        <h2>Analysis Output</h2>
+        <div id="output" class="empty">Run an analysis to view the decision, messages, risk factors, and raw JSON.</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const productTypes = [
+      "baby_formula", "diapers", "toys", "stroller", "baby_food", "wipes",
+      "bottles", "nursing", "skincare", "car_seat", "etc"
+    ];
+    const inventoryStatuses = ["high", "medium", "low"];
+    const regions = ["Dubai", "Abu Dhabi", "Riyadh", "Doha"];
+    const customerHistories = ["new", "frequent_buyer", "complainant"];
+
+    const presets = {
+      "Safe Order": {
+        order_id: "T01",
+        product_type: "toys",
+        product_name: "soft baby rattle",
+        days_since_order: 1,
+        expected_delivery_days: 3,
+        inventory_status: "high",
+        region: "Dubai",
+        customer_history: "new"
+      },
+      "Monitor Case": {
+        order_id: "T02",
+        product_type: "baby_formula",
+        product_name: "something",
+        days_since_order: 2,
+        expected_delivery_days: 2,
+        inventory_status: "high",
+        region: "Dubai",
+        customer_history: "new"
+      },
+      "Minor Delay Case": {
+        order_id: "T03",
+        product_type: "toys",
+        product_name: "soft baby rattle",
+        days_since_order: 3.5,
+        expected_delivery_days: 3,
+        inventory_status: "medium",
+        region: "Dubai",
+        customer_history: "new"
+      },
+      "Delay Case": {
+        order_id: "T04",
+        product_type: "diapers",
+        product_name: "cloudfit diapers",
+        days_since_order: 4,
+        expected_delivery_days: 3,
+        inventory_status: "medium",
+        region: "Dubai",
+        customer_history: "new"
+      },
+      "High Risk Case": {
+        order_id: "T07",
+        product_type: "baby_formula",
+        product_name: "gentle start formula",
+        days_since_order: 6,
+        expected_delivery_days: 2,
+        inventory_status: "low",
+        region: "Dubai",
+        customer_history: "frequent_buyer"
+      }
+    };
+
+    function fillSelect(id, values) {
+      const select = document.getElementById(id);
+      select.innerHTML = values.map(value => `<option value="${value}">${value}</option>`).join("");
+    }
+
+    function setForm(payload) {
+      Object.entries(payload).forEach(([key, value]) => {
+        const field = document.getElementById(key);
+        if (field) field.value = value;
+      });
+    }
+
+    function getPayload() {
+      return {
+        order_id: document.getElementById("order_id").value.trim(),
+        product_type: document.getElementById("product_type").value,
+        product_name: document.getElementById("product_name").value.trim(),
+        days_since_order: Number(document.getElementById("days_since_order").value),
+        expected_delivery_days: Number(document.getElementById("expected_delivery_days").value),
+        inventory_status: document.getElementById("inventory_status").value,
+        region: document.getElementById("region").value,
+        customer_history: document.getElementById("customer_history").value
+      };
+    }
+
+    function safeValue(value) {
+      return value === null || value === undefined || value === "" ? "None" : value;
+    }
+
+    function renderRiskFactors(factors) {
+      if (!Array.isArray(factors) || factors.length === 0) {
+        return "<p class='empty'>No risk factors returned.</p>";
+      }
+
+      const rows = factors.map(item => `
+        <tr>
+          <td>${item.factor}</td>
+          <td>${item.impact}</td>
+        </tr>
+      `).join("");
+
+      return `
+        <table>
+          <thead>
+            <tr><th>Factor</th><th>Impact</th></tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    function renderOutput(data) {
+      const output = document.getElementById("output");
+      output.className = "";
+      output.innerHTML = `
+        <div class="summary">
+          <div class="metric"><span>Risk Score</span><strong>${safeValue(data.risk_score)}</strong></div>
+          <div class="metric"><span>Confidence</span><strong>${safeValue(data.confidence)}</strong></div>
+          <div class="metric"><span>Issue</span><strong>${safeValue(data.issue)}</strong></div>
+          <div class="metric"><span>Decision</span><strong>${safeValue(data.decision)}</strong></div>
+          <div class="metric"><span>Alternative</span><strong>${safeValue(data.alternative_product)}</strong></div>
+        </div>
+
+        <div class="messages">
+          <div class="message"><strong>EN:</strong> ${safeValue(data.message_en)}</div>
+          <div class="message"><strong>AR:</strong> ${safeValue(data.message_ar)}</div>
+        </div>
+
+        <h2>Risk Factors</h2>
+        ${renderRiskFactors(data.risk_factors)}
+
+        <h2>Raw JSON</h2>
+        <pre>${JSON.stringify(data, null, 2)}</pre>
+      `;
+    }
+
+    async function analyzeOrder(event) {
+      event.preventDefault();
+      const status = document.getElementById("status");
+      const button = document.getElementById("analyzeButton");
+
+      status.className = "status";
+      status.textContent = "Analyzing order...";
+      button.disabled = true;
+
+      try {
+        const response = await fetch("/analyze-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(getPayload())
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.detail || `Request failed with status ${response.status}`);
+        }
+
+        renderOutput(data);
+        status.textContent = "Analysis complete.";
+      } catch (error) {
+        status.className = "status error";
+        status.textContent = "Could not connect to the FastAPI server. Make sure it is running.";
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    fillSelect("product_type", productTypes);
+    fillSelect("inventory_status", inventoryStatuses);
+    fillSelect("region", regions);
+    fillSelect("customer_history", customerHistories);
+
+    const presetRoot = document.getElementById("presets");
+    Object.entries(presets).forEach(([name, payload]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "preset";
+      button.textContent = name;
+      button.addEventListener("click", () => setForm(payload));
+      presetRoot.appendChild(button);
+    });
+
+    document.getElementById("orderForm").addEventListener("submit", analyzeOrder);
+    setForm(presets["Safe Order"]);
+  </script>
+</body>
+</html>

@@ -1,8 +1,10 @@
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 import risk_agent
 from catalog import CATALOG
@@ -18,6 +20,16 @@ app = FastAPI(
     description="Decision-first order risk analysis with bilingual JSON output.",
     version="0.2.0",
 )
+
+BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
+
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+@app.get("/")
+async def root() -> FileResponse:
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.on_event("startup")
