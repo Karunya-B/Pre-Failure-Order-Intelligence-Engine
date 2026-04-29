@@ -39,4 +39,4 @@ dist/
 htmlcov/
 test_gemini.py
 test_gemini_models.py
-documentation/
+documentation_/
