@@ -80,7 +80,7 @@ Create `.env` from `.env.example`:
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
-DATABASE_URL=postgresql://user:password@localhost:5432/momzworld
+DATABASE_URL=postgresql://user:password@localhost:5432/mumzworld
 ```
 
 - `GEMINI_API_KEY` is optional.
